@@ -27,6 +27,7 @@ const failedKMLs = [];
         const json = parseXML(data, {
           isArray: (name) => name.match(regDirection),
         });
+        writeFile("data/test.json", json);
         const { direction } = json.route;
         const route = direction.map((d) => {
           const { name, busstop } = d;

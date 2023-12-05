@@ -1,43 +1,43 @@
-const polyline = require('@mapbox/polyline');
-const simplify = require('simplify-js');
+const polyline = require("@mapbox/polyline");
+const simplify = require("simplify-js");
 function coords2polyline(coords) {
   // convert lng lat to X Y
   const xyCoords = coords.map((coord) => ({ x: coord[0], y: coord[1] }));
   const simplifiedCoords = simplify(xyCoords, 0.00005, true); // returns X Y
   // polyline accepts lat lng instead of lng lat
-  return polyline.encode(simplifiedCoords.map((coord) => [coord.y, coord.x]));
+  return simplifiedCoords.map((coord) => [coord.y, coord.x]);
 }
 
-const { round } = require('@turf/helpers');
+const { round } = require("@turf/helpers");
 
-const path = require('path');
-const { readFile, writeFile } = require('../utils');
+const path = require("path");
+const { readFile, writeFile } = require("../utils");
 
-const Validator = require('fastest-validator');
+const Validator = require("fastest-validator");
 const validator = new Validator();
 
-const stops = readFile('./data/v1/raw/bus-stops.json');
-const stopsDatamall = readFile('./data/v1/raw/bus-stops.datamall.json');
-const services = readFile('./data/v1/raw/bus-services.json');
+const stops = readFile("./data/v1/raw/bus-stops.json");
+const stopsDatamall = readFile("./data/v1/raw/bus-stops.datamall.json");
+const services = readFile("./data/v1/raw/bus-services.json");
 
 let stopNames = {};
-const stopNamesArr = readFile('./data/v1/patch/bus-stop-names.json');
+const stopNamesArr = readFile("./data/v1/patch/bus-stop-names.json");
 stopNamesArr.forEach((s) => {
   stopNames[s.number] = s.newName;
 });
 
 const missingRoutesServices = readFile(
-  './data/v1/patch/bus-services-routes.failures.json',
-).failedKMLs.map((d) => path.parse(d.fileName).name.replace(/-\d+$/, ''));
+  "./data/v1/patch/bus-services-routes.failures.json"
+).failedKMLs.map((d) => path.parse(d.fileName).name.replace(/-\d+$/, ""));
 const multilineRoutesServices = readFile(
-  './data/v1/patch/patch-multiple-routes.results.json',
-).map((d) => '' + d.number);
+  "./data/v1/patch/patch-multiple-routes.results.json"
+).map((d) => "" + d.number);
 const faultyRoutesServices = [
   ...missingRoutesServices,
   ...multilineRoutesServices,
 ];
 
-const missingServices = readFile('./data/v1/patch/missing-services.json');
+const missingServices = readFile("./data/v1/patch/missing-services.json");
 
 const servicesJSON = {};
 const stopsJSON = {};
@@ -50,8 +50,8 @@ const routesPolylines = {};
 stops
   .filter((s) => !/^-/.test(s.name))
   .sort((a, b) => {
-    if ('' + a.name < '' + b.name) return -1;
-    if ('' + a.name > '' + b.name) return 1;
+    if ("" + a.name < "" + b.name) return -1;
+    if ("" + a.name > "" + b.name) return 1;
     return 0;
   })
   .forEach((s) => {
@@ -60,15 +60,15 @@ stops
       details,
       coordinates: { long, lat },
     } = s;
-    const number = '' + name; // Stringify, even when it's just numbers
+    const number = "" + name; // Stringify, even when it's just numbers
     const stopName = stopNames[number] || details;
     let road;
 
-    stopsDatamall.forEach(s => {
+    stopsDatamall.forEach((s) => {
       if (s.BusStopCode == number) {
-        road = s.RoadName
+        road = s.RoadName;
       }
-    })
+    });
 
     stopsJSON[number] = [round(long, 5), round(lat, 5), stopName, road];
     stopsData[number] = {
@@ -80,7 +80,7 @@ stops
   });
 
 function generateRoutesName(routes) {
-  let name = '';
+  let name = "";
   if (routes.length == 1) {
     const route = routes[0];
     const [firstStop, ...rest] = route;
@@ -103,8 +103,8 @@ function generateRoutesName(routes) {
       route2[0] == route1[route1.length - 1]
         ? [route1[route1.length - 1]]
         : [route1[route1.length - 1], route2[0]];
-    const firstStopsName = firstStops.map((s) => stopsData[s].name).join(' / ');
-    const lastStopsName = lastStops.map((s) => stopsData[s].name).join(' / ');
+    const firstStopsName = firstStops.map((s) => stopsData[s].name).join(" / ");
+    const lastStopsName = lastStops.map((s) => stopsData[s].name).join(" / ");
     if (firstStopsName == lastStopsName) {
       name = firstStopsName;
     } else {
@@ -119,16 +119,16 @@ services
     (s) =>
       !/^-/.test(s.number) &&
       /^(CITYDIRECT|TRUNK)$/.test(s.type) &&
-      !missingServices.includes(s.number),
+      !missingServices.includes(s.number)
   )
   .sort((a, b) => {
-    if ('' + a.number < '' + b.number) return -1;
-    if ('' + a.number > '' + b.number) return 1;
+    if ("" + a.number < "" + b.number) return -1;
+    if ("" + a.number > "" + b.number) return 1;
     return 0;
   })
   .forEach((s) => {
     const { number, type, kmlFile } = s;
-    const num = '' + number;
+    const num = "" + number;
     if (!routesPolylines[num]) routesPolylines[num] = [];
 
     const route = readFile(`./data/v1/raw/services/${type}/${number}.json`)
@@ -150,7 +150,7 @@ services
       r.stops.filter((s) => {
         // Filter out stops that are non-existent?
         return !!stopsData[s];
-      }),
+      })
     );
 
     servicesJSON[num] = {
@@ -164,7 +164,7 @@ services
         if (!route[i]) return;
         const geojson = readFile(`./data/v1/raw/services/${type}/${p}.geojson`);
         const feature = geojson.features[0];
-        if (feature.geometry.type === 'GeometryCollection') {
+        if (feature.geometry.type === "GeometryCollection") {
           const coordinates = feature.geometry.geometries.reduce((acc, g) => {
             const line = g.coordinates;
             if (acc.length && acc[acc.length - 1].join() === line[0].join()) {
@@ -175,22 +175,22 @@ services
           }, []);
           routesPolylines[num][i] = coords2polyline(coordinates);
           routesFeatures.push({
-            type: 'Feature',
+            type: "Feature",
             properties: {
               number: num,
               pattern: i,
             },
             geometry: {
-              type: 'LineString',
+              type: "LineString",
               coordinates,
             },
           });
-        } else if (feature.geometry.type === 'LineString') {
+        } else if (feature.geometry.type === "LineString") {
           routesPolylines[num][i] = coords2polyline(
-            feature.geometry.coordinates,
+            feature.geometry.coordinates
           );
           routesFeatures.push({
-            type: 'Feature',
+            type: "Feature",
             properties: {
               number: num,
               pattern: i,
@@ -199,7 +199,7 @@ services
           });
         } else {
           throw new Error(
-            'Feature is neither GeometryCollection or LineString.',
+            "Feature is neither GeometryCollection or LineString."
           );
         }
       });
@@ -213,7 +213,7 @@ services
         const { BUS_DIRECTION_ONE, BUS_DIRECTION_TWO } = patchRoute;
         if (BUS_DIRECTION_ONE) {
           const firstStop = BUS_DIRECTION_ONE.find(
-            (s) => s.BUS_SEQUENCE === 1,
+            (s) => s.BUS_SEQUENCE === 1
           ).START_BUS_STOP_NUM;
           const coordinates = BUS_DIRECTION_ONE.reduce((acc, v) => {
             const line = polyline
@@ -232,7 +232,7 @@ services
         }
         if (BUS_DIRECTION_TWO) {
           const firstStop = BUS_DIRECTION_TWO.find(
-            (s) => s.BUS_SEQUENCE === 1,
+            (s) => s.BUS_SEQUENCE === 1
           ).START_BUS_STOP_NUM;
           const coordinates = BUS_DIRECTION_TWO.reduce((acc, v) => {
             const line = polyline
@@ -270,7 +270,7 @@ services
       if (!fauxError) {
         route.forEach((pattern, i) => {
           const theRightPattern = patchPatterns.find(
-            (p) => p.firstStop == pattern.stops[0],
+            (p) => p.firstStop == pattern.stops[0]
           );
           if (!theRightPattern) {
             // This means the route might contain 2 patterns
@@ -282,13 +282,13 @@ services
           const coordinates = theRightPattern.coordinates;
           routesPolylines[num][i] = coords2polyline(coordinates);
           routesFeatures.push({
-            type: 'Feature',
+            type: "Feature",
             properties: {
               number: num,
               pattern: i,
             },
             geometry: {
-              type: 'LineString',
+              type: "LineString",
               coordinates,
             },
           });
@@ -314,7 +314,7 @@ const stopsFeatures = Object.values(stopsData)
   .map((d) => {
     const { number, name, coordinates, road } = d;
     return {
-      type: 'Feature',
+      type: "Feature",
       id: number,
       properties: {
         number,
@@ -323,7 +323,7 @@ const stopsFeatures = Object.values(stopsData)
         services: [...stopsServices[number]].sort(),
       },
       geometry: {
-        type: 'Point',
+        type: "Point",
         coordinates,
       },
     };
@@ -334,32 +334,32 @@ const stopsFeatures = Object.values(stopsData)
 
 // Stops GeoJSON
 const stopsGeoJSON = {
-  type: 'FeatureCollection',
+  type: "FeatureCollection",
   features: stopsFeatures,
 };
 let e = validator.validate(stopsGeoJSON, {
-  type: { type: 'equal', value: 'FeatureCollection' },
+  type: { type: "equal", value: "FeatureCollection" },
   features: {
-    type: 'array',
+    type: "array",
     empty: false,
     items: {
-      $$type: 'object',
-      type: { type: 'equal', value: 'Feature' },
-      id: { type: 'string', empty: false },
+      $$type: "object",
+      type: { type: "equal", value: "Feature" },
+      id: { type: "string", empty: false },
       properties: {
-        $$type: 'object',
-        number: { type: 'string', empty: false },
-        name: { type: 'string', empty: false },
-        road: { type: 'string', empty: false },
-        services: 'string[]',
+        $$type: "object",
+        number: { type: "string", empty: false },
+        name: { type: "string", empty: false },
+        road: { type: "string", empty: false },
+        services: "string[]",
       },
       geometry: {
-        $$type: 'object',
-        type: { type: 'equal', value: 'Point' },
+        $$type: "object",
+        type: { type: "equal", value: "Point" },
         coordinates: {
-          type: 'array',
+          type: "array",
           empty: false,
-          items: 'number',
+          items: "number",
           length: 2,
         },
       },
@@ -367,37 +367,37 @@ let e = validator.validate(stopsGeoJSON, {
   },
 });
 if (e.length) throw e;
-writeFile('./data/v1/stops.geojson', stopsGeoJSON);
-writeFile('./data/v1/stops.min.geojson', stopsGeoJSON);
+writeFile("./data/v1/stops.geojson", stopsGeoJSON);
+writeFile("./data/v1/stops.min.geojson", stopsGeoJSON);
 
 // Routes GeoJSON
 const routesGeoJSON = {
-  type: 'FeatureCollection',
+  type: "FeatureCollection",
   features: routesFeatures,
 };
 e = validator.validate(routesGeoJSON, {
-  type: { type: 'equal', value: 'FeatureCollection' },
+  type: { type: "equal", value: "FeatureCollection" },
   features: {
-    type: 'array',
+    type: "array",
     empty: false,
     items: {
-      $$type: 'object',
-      type: { type: 'equal', value: 'Feature' },
+      $$type: "object",
+      type: { type: "equal", value: "Feature" },
       properties: {
-        $$type: 'object',
-        number: { type: 'string', empty: false },
-        pattern: { type: 'number', integer: true, min: 0, max: 1 },
+        $$type: "object",
+        number: { type: "string", empty: false },
+        pattern: { type: "number", integer: true, min: 0, max: 1 },
       },
       geometry: {
-        $$type: 'object',
-        type: { type: 'equal', value: 'LineString' },
+        $$type: "object",
+        type: { type: "equal", value: "LineString" },
         coordinates: {
-          type: 'array',
+          type: "array",
           empty: false,
           items: {
-            type: 'array',
+            type: "array",
             empty: false,
-            items: 'number',
+            items: "number",
             length: 2,
           },
         },
@@ -406,8 +406,8 @@ e = validator.validate(routesGeoJSON, {
   },
 });
 if (e.length) throw e;
-writeFile('./data/v1/routes.geojson', routesGeoJSON);
-writeFile('./data/v1/routes.min.geojson', routesGeoJSON);
+writeFile("./data/v1/routes.geojson", routesGeoJSON);
+writeFile("./data/v1/routes.min.geojson", routesGeoJSON);
 
 // Complementary JSONs
 // ===
@@ -416,77 +416,85 @@ writeFile('./data/v1/routes.min.geojson', routesGeoJSON);
 // Convert hash to [key, value] because the validator doesn't support dynamic keys
 e = validator.validate(Object.entries(stopsJSON), {
   $$root: true,
-  type: 'array',
+  type: "array",
   empty: false,
   items: {
-    type: 'tuple',
+    type: "tuple",
     empty: false,
     items: [
-      { type: 'string', empty: false },
+      { type: "string", empty: false },
       {
-        type: 'tuple',
+        type: "tuple",
         empty: false,
         items: [
-          { type: 'number' },
-          { type: 'number' },
-          { type: 'string', empty: false },
-          { type: 'string', empty: false },
+          { type: "number" },
+          { type: "number" },
+          { type: "string", empty: false },
+          { type: "string", empty: false },
         ],
       },
     ],
   },
 });
 if (e.length) throw e;
-writeFile('./data/v1/stops.json', stopsJSON);
-writeFile('./data/v1/stops.min.json', stopsJSON);
+writeFile("./data/v1/stops.json", stopsJSON);
+writeFile("./data/v1/stops.min.json", stopsJSON);
 
 // Services JSON
 e = validator.validate(Object.entries(servicesJSON), {
   $$root: true,
-  type: 'array',
+  type: "array",
   empty: false,
   items: {
-    type: 'tuple',
+    type: "tuple",
     empty: false,
     items: [
-      { type: 'string', empty: false },
+      { type: "string", empty: false },
       {
-        $$type: 'object',
-        name: { type: 'string', empty: false },
+        $$type: "object",
+        name: { type: "string", empty: false },
         routes: {
-          type: 'array',
+          type: "array",
           empty: false,
-          items: { type: 'array', empty: false, items: 'string' },
+          items: { type: "array", empty: false, items: "string" },
         },
       },
     ],
   },
 });
 if (e.length) throw e;
-writeFile('./data/v1/services.json', servicesJSON);
-writeFile('./data/v1/services.min.json', servicesJSON);
+writeFile("./data/v1/services.json", servicesJSON);
+writeFile("./data/v1/services.min.json", servicesJSON);
 
 // Route Polylines
 e = validator.validate(Object.entries(routesPolylines), {
   $$root: true,
-  type: 'array',
+  type: "array",
   empty: false,
   items: {
-    type: 'tuple',
+    type: "tuple",
     empty: false,
     items: [
-      { type: 'string', empty: false },
+      { type: "string", empty: false },
       {
-        type: 'array',
+        type: "array",
         empty: false,
         items: {
-          type: 'string',
+          type: "array",
           empty: false,
+          items: {
+            type: "array",
+            empty: false,
+            items: {
+              type: "number",
+              empty: false,
+            },
+          },
         },
       },
     ],
   },
 });
 if (e.length) throw e;
-writeFile('./data/v1/routes.json', routesPolylines);
-writeFile('./data/v1/routes.min.json', routesPolylines);
+writeFile("./data/v1/routes.json", routesPolylines);
+writeFile("./data/v1/routes.min.json", routesPolylines);
