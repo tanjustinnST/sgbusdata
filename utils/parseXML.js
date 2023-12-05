@@ -1,15 +1,17 @@
-const parser = require('fast-xml-parser');
-const he = require('he');
+const { XMLParser } = require("fast-xml-parser");
+const he = require("he");
 
-module.exports = (xml, opts) =>
-  parser.parse(xml, {
-    attributeNamePrefix: '',
+module.exports = (xml, opts) => {
+  const parser = new XMLParser({
+    attributeNamePrefix: "",
     ignoreAttributes: false,
     parseAttributeValue: false,
     ignoreNameSpace: true,
     allowBooleanAttributes: true,
-    attrValueProcessor: (val, attrName) =>
+    attributeValueProcessor: (attrName, val) =>
       he.decode(val, { isAttributeValue: true }),
-    tagValueProcessor: (val, tagName) => he.decode(val),
+    tagValueProcessor: (tagName, val) => he.decode(val),
     ...opts,
   });
+  return parser.parse(xml);
+};

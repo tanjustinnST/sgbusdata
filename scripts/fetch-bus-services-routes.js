@@ -1,8 +1,8 @@
-const togeojson = require('@tmcw/togeojson');
-const { fetch, parseXML, parseDOM, readFile, writeFile } = require('../utils');
-const path = require('path');
+const togeojson = require("@tmcw/togeojson");
+const { fetch, parseXML, parseDOM, readFile, writeFile } = require("../utils");
+const path = require("path");
 
-const services = readFile('./data/v1/raw/bus-services.json');
+const services = readFile("./data/v1/raw/bus-services.json");
 const servicesLen = services.length;
 
 const failedXMLs = [];
@@ -21,10 +21,11 @@ const failedKMLs = [];
       const fileName = routeFile[k];
       try {
         const data = await fetch(
-          `https://www.lta.gov.sg/map/busService/bus_route_xml/${fileName}`,
+          `https://www.lta.gov.sg/map/busService/bus_route_xml/${fileName}`
         );
+        const regDirection = /^direction$/i;
         const json = parseXML(data, {
-          arrayMode: /^direction$/i,
+          isArray: (name) => name.match(regDirection),
         });
         const { direction } = json.route;
         const route = direction.map((d) => {
@@ -36,7 +37,7 @@ const failedKMLs = [];
 
         writeFile(
           `data/v1/raw/services/${type}/${path.parse(fileName).name}.json`,
-          route,
+          route
         );
       } catch (e) {
         failedXMLs.push({ fileName, e });
@@ -47,14 +48,14 @@ const failedKMLs = [];
       const fileName = kmlFile[k];
       try {
         const data = await fetch(
-          `https://www.lta.gov.sg/map/busService/bus_route_kml/${fileName}`,
+          `https://www.lta.gov.sg/map/busService/bus_route_kml/${fileName}`
         );
         const kml = parseDOM(data);
         const geojson = togeojson.kml(kml);
 
         writeFile(
           `data/v1/raw/services/${type}/${path.parse(fileName).name}.geojson`,
-          geojson,
+          geojson
         );
       } catch (e) {
         failedKMLs.push({ fileName, e: e.toString() });
@@ -66,7 +67,7 @@ const failedKMLs = [];
   }
 
   if (failedXMLs.length || failedKMLs.length) {
-    console.log('FAILURES:');
+    console.log("FAILURES:");
     console.table(failedXMLs);
     console.table(failedKMLs);
 
