@@ -19,9 +19,10 @@
     "@mapbox/polyline": "~1.1.1",
     "@tmcw/togeojson": "~4.4.0",
     "@turf/helpers": "~6.3.0",
+    "@xmldom/xmldom": "^0.8.10",
     "del-cli": "~4.0.1",
     "dotenv": "~10.0.0",
-    "fast-xml-parser": "~3.19.0",
+    "fast-xml-parser": "^4.3.2",
     "fastest-validator": "~1.10.1",
     "form-data": "~4.0.0",
     "got": "~11.8.3",
@@ -29,7 +30,6 @@
     "hyperdiff": "~2.0.8",
     "just-diff": "~3.1.1",
     "simplify-js": "~1.2.4",
-    "sort-keys": "~4.2.0",
-    "xmldom": "~0.5.0"
+    "sort-keys": "~4.2.0"
   }
 }
