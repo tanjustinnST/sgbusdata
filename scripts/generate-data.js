@@ -320,7 +320,7 @@ const stopsFeatures = Object.values(stopsData)
         number,
         name,
         road,
-        services: [...stopsServices[number]].sort(),
+        services: [...stopsServices[number]].sort().join(),
       },
       geometry: {
         type: "Point",
@@ -351,7 +351,7 @@ let e = validator.validate(stopsGeoJSON, {
         number: { type: "string", empty: false },
         name: { type: "string", empty: false },
         road: { type: "string", empty: false },
-        services: "string[]",
+        services: "string",
       },
       geometry: {
         $$type: "object",
