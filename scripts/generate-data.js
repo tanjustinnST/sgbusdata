@@ -315,7 +315,6 @@ const stopsFeatures = Object.values(stopsData)
     const { number, name, coordinates, road } = d;
     return {
       type: "Feature",
-      id: number,
       properties: {
         number,
         name,
@@ -345,7 +344,6 @@ let e = validator.validate(stopsGeoJSON, {
     items: {
       $$type: "object",
       type: { type: "equal", value: "Feature" },
-      id: { type: "string", empty: false },
       properties: {
         $$type: "object",
         number: { type: "string", empty: false },
